@@ -20,7 +20,7 @@ class ProductController extends Controller
         $request->validate([
             'status' => 'integer|max:1|min:0',
             'page_size' => 'nullable|integer',
-            'visible' => 'nullable|boolean',
+            'visibility' => 'nullable|boolean',
         ]);
         try {
             // fetch products

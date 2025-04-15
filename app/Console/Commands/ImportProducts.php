@@ -17,7 +17,7 @@ class ImportProducts extends Command
      *
      * @var string
      */
-    protected $signature = 'products:import';
+    protected $signature = 'products:import {--b|batch=100}';
 
     /**
      * The console command description.
@@ -36,8 +36,15 @@ class ImportProducts extends Command
         try {
             $skipHeader = true;
             $importFile = Storage::disk('public')->path('') . self::IMPORT_FILE_NAME;
-            $file_handle = fopen($importFile, 'r');
-            while ($csvRow = fgetcsv($file_handle, null, ';')) {
+            $fileHandle = fopen($importFile, 'r');
+            $newProducts = []; // Holds products to be loaded in batches
+            $batchSize = $this->option('batch');
+            $now = now();
+
+            // Load existing product Ids
+            $existingProductIds = Product::pluck('id', 'feed_product_id')->toArray();
+
+            while ($csvRow = fgetcsv($fileHandle, null, ';')) {
                 if ($skipHeader) {
                     $skipHeader = false;
                     continue;
@@ -49,27 +56,40 @@ class ImportProducts extends Command
                     continue;
                 }
 
-                // update product, or create a new one if it doesn't exist
-                Product::updateOrCreate(
-                    [
-                        'feed_product_id' => $csvRow[0],
-                    ],
-                    [
-                        'sku' => $csvRow[1], // SKU
-                        'name' => $csvRow[2], // name
-                        'qty' => $csvRow[3], // qty
-                        'status' => $csvRow[4], // status
-                        'visibility' => $csvRow[5], // visibility
-                        'price' => $csvRow[6], // price
-                        'type_id' => $csvRow[7], // type_id - simple products for now only
-                        'description' => $csvRow[8], // description
-                        'image' => $csvRow[9], // image
-                        'tags' => explode(',', $csvRow[10]), // tags
-                    ]
-                );
+                $feedProductId = $csvRow[0];
+                $productData = [
+                    'feed_product_id' => $feedProductId,
+                    'sku' => $csvRow[1],
+                    'name' => $csvRow[2],
+                    'qty' => $csvRow[3],
+                    'status' => $csvRow[4],
+                    'visibility' => $csvRow[5],
+                    'price' => $csvRow[6],
+                    'type_id' => $csvRow[7],
+                    'description' => $csvRow[8],
+                    'image' => $csvRow[9],
+                    'tags' => json_encode(array_map('trim', explode(',', $csvRow[10]))),
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+
+                if (!isset($existingProductIds[$csvRow[0]])) {
+                    $newProducts[] = array_merge(['feed_product_id' => $feedProductId], $productData);
+                }
+
+                // Insert product batch based on batchSize
+                if (count($newProducts) >= $batchSize) {
+                    Product::insert($newProducts);
+                    $newProducts = [];
+                }
             }
 
-            fclose($file_handle);
+            if (!empty($newProducts)) {
+                Product::insert($newProducts);
+                $newProducts = [];
+            }
+
+            fclose($fileHandle);
         } catch (\Exception $e) {
             Log::critical(
                 sprintf('Something went wrong during file import: %s', $e->getMessage()),

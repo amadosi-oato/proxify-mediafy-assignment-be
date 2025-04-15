@@ -7,7 +7,6 @@ use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-use function Pest\Laravel\json;
 
 class ProductController extends Controller
 {

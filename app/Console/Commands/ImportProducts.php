@@ -42,6 +42,13 @@ class ImportProducts extends Command
                     $skipHeader = false;
                     continue;
                 }
+
+                // Skip rows with empty name or feed_product_id
+                if (empty(trim($csvRow[0])) || empty(trim($csvRow[2]))) {
+                    Log::warning('Skipped row with missing feed_product_id or name', ['row' => $csvRow]);
+                    continue;
+                }
+
                 // update product, or create a new one if it doesn't exist
                 Product::updateOrCreate(
                     [

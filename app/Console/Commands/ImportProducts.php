@@ -59,16 +59,16 @@ class ImportProducts extends Command
                 $feedProductId = $csvRow[0];
                 $productData = [
                     'feed_product_id' => $feedProductId,
-                    'sku' => $csvRow[1],
-                    'name' => $csvRow[2],
-                    'qty' => $csvRow[3],
-                    'status' => $csvRow[4],
-                    'visibility' => $csvRow[5],
-                    'price' => $csvRow[6],
-                    'type_id' => $csvRow[7],
-                    'description' => $csvRow[8],
-                    'image' => $csvRow[9],
-                    'tags' => json_encode(array_map('trim', explode(',', $csvRow[10]))),
+                    'sku' => $csvRow[1], // SKU
+                    'name' => $csvRow[2], // name
+                    'qty' => $csvRow[3], // qty
+                    'status' => $csvRow[4], // status
+                    'visibility' => $csvRow[5], // visibility
+                    'price' => $csvRow[6], // price
+                    'type_id' => $csvRow[7], // type_id - simple products for now
+                    'description' => $csvRow[8], // description
+                    'image' => $csvRow[9], // image
+                    'tags' => json_encode(array_map('trim', explode(',', $csvRow[10]))), // tags
                     'created_at' => $now,
                     'updated_at' => $now,
                 ];
